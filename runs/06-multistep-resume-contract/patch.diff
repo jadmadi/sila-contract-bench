@@ -1,0 +1,53 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/06-multistep-resume-contract/resume.go	2026-10-13 07:26:09.379231159 +0300
+@@ -0,0 +1,50 @@
++package multistepresume
++
++// Checkpoint captures the progress and error state of a task workflow.
++type Checkpoint struct {
++	CompletedSteps []string
++	CurrentStep    string
++	LastError      error
++}
++
++// StepDefinition represents a single step in a task workflow.
++type StepDefinition struct {
++	ID string
++}
++
++// StepRunner executes individual workflow steps.
++type StepRunner interface {
++	Execute(step StepDefinition) error
++}
++
++// ResumeTaskWorkflow resumes a task workflow from a checkpoint, skipping already completed
++// steps and executing the remaining steps sequentially. If a step fails, the error is recorded
++// in the checkpoint and returned immediately without executing subsequent steps.
++func ResumeTaskWorkflow(cp *Checkpoint, steps []StepDefinition, runner StepRunner) (*Checkpoint, error) {
++	if cp == nil {
++		cp = &Checkpoint{}
++	}
++
++	completed := make(map[string]bool, len(cp.CompletedSteps))
++	for _, id := range cp.CompletedSteps {
++		completed[id] = true
++	}
++
++	for _, step := range steps {
++		if completed[step.ID] {
++			continue
++		}
++
++		cp.CurrentStep = step.ID
++		if err := runner.Execute(step); err != nil {
++			cp.LastError = err
++			return cp, err
++		}
++
++		cp.CompletedSteps = append(cp.CompletedSteps, step.ID)
++		completed[step.ID] = true
++	}
++
++	cp.LastError = nil
++	return cp, nil
++}

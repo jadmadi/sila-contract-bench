@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "01-cli-validation",
+  "arm": "baseline",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "33a73648efabad9c0e217329a82cf12c58dbc9d06f3605e5a20d72c11cfa6c1a",
+  "oracle_digest": "11852818a4a02c32f8d9b425065108209977c2bd9b692702b08df2d94a7d4943",
+  "first_pass": false,
+  "accepted": false,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 0,
+  "wall_seconds": 199,
+  "input_tokens": 9600,
+  "output_tokens": 34527,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/01-cli-validation-baseline/oracle.log"
+  ],
+  "outcome": "rejected"
+}

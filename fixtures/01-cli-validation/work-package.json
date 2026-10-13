@@ -1,0 +1,164 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-01-cli-validation",
+  "revision": 1,
+  "purpose": "Implement robust CLI option parsing and validation with strict error classification",
+  "constraints": [
+    "pure Go standard library only",
+    "zero panics on malformed input"
+  ],
+  "non_goals": [
+    "no shell completions",
+    "no custom flag syntax outside --key=val and --bool"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement ValidateAndParseRunOptions",
+      "context": "CLI commands must validate options deterministically and reject invalid flags before starting execution.",
+      "why": "Prevent silent misconfigurations and ambiguous execution states.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "options.go"
+        ],
+        "edit": [
+          "options.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "options.go",
+          "symbol": "RunOptions",
+          "excerpt": "type RunOptions struct {\n\tTimeout int\n\tFormat string\n\tStrict bool\n\tTargets []string\n}",
+          "sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Manual string splitting and validation",
+          "rationale": "Keeps parsing dependency-free and deterministic without global state.",
+          "rejected": [
+            "flag package (uses global CommandLine state)",
+            "pflag (third-party external dependency)"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Set default values Timeout=30, Format=text, Strict=false",
+          "expected": "Default struct initialized",
+          "on_failure": "Check default field assignments"
+        },
+        {
+          "id": "S-002",
+          "action": "Iterate through args and parse --timeout, --format, --strict, and positional targets",
+          "expected": "Recognized options populated, positional targets gathered",
+          "on_failure": "Verify prefix checking logic"
+        },
+        {
+          "id": "S-003",
+          "action": "Validate timeout > 0 and format in (json, text); reject unrecognized -- flags",
+          "expected": "Return specific error strings on invalid values",
+          "on_failure": "Ensure exact error strings INVALID_TIMEOUT and INVALID_FORMAT"
+        }
+      ],
+      "interfaces": [
+        "func ValidateAndParseRunOptions(args []string) (*RunOptions, error)"
+      ],
+      "constraints": [
+        "Timeout must be > 0",
+        "Format must be json or text",
+        "Unknown flags must return UNKNOWN_FLAG: <flag>"
+      ],
+      "examples": [
+        {
+          "input": "[\"--timeout=10\", \"--format=json\", \"--strict\", \"target1\"]",
+          "output": "&RunOptions{Timeout: 10, Format: \"json\", Strict: true, Targets: [\"target1\"]}",
+          "explanation": "Standard invocation with all flags specified"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002",
+        "AC-003"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestValidateAndParseRunOptions$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "clivalidation/TestValidateAndParseRunOptions",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Invalid flag syntax must fail fast without partial side effects"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "Default options populated when args are empty",
+      "given": "Empty args slice",
+      "action": "Call ValidateAndParseRunOptions",
+      "expected": "Timeout=30, Format=text, Strict=false, err=nil",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Invalid timeout or format returns explicit error code",
+      "given": "Timeout <= 0 or invalid format string",
+      "action": "Call ValidateAndParseRunOptions",
+      "expected": "Returns INVALID_TIMEOUT or INVALID_FORMAT error",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-003",
+      "requirement": "Unknown flag returns UNKNOWN_FLAG error",
+      "given": "Flag --foo=bar not in recognized set",
+      "action": "Call ValidateAndParseRunOptions",
+      "expected": "Returns UNKNOWN_FLAG: --foo=bar error",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}

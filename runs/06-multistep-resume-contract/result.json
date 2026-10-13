@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "06-multistep-resume",
+  "arm": "contract",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "47506936900d0532303fd296df725e9f81941db4493b1099cc72f580b2ef95cc",
+  "oracle_digest": "33c050027768154262ec5dba819faae4da13edf733efc029e152c0738b5c85e8",
+  "first_pass": false,
+  "accepted": false,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 1,
+  "wall_seconds": 193,
+  "input_tokens": 12000,
+  "output_tokens": 8500,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/06-multistep-resume-contract/oracle.log"
+  ],
+  "outcome": "rejected"
+}

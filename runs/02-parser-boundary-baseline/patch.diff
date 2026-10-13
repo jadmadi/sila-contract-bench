@@ -1,0 +1,101 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/02-parser-boundary-baseline/parser.go	2026-10-13 07:20:28.459756107 +0300
+@@ -0,0 +1,98 @@
++package parserboundary
++
++import (
++	"fmt"
++)
++
++type TokenNode struct {
++	Kind     string       `json:"kind"` // "object", "array", or "root"
++	Depth    int          `json:"depth"`
++	Children []*TokenNode `json:"children,omitempty"`
++}
++
++type delimiterFrame struct {
++	delim rune
++	node  *TokenNode
++}
++
++// ParseDelimitedTokens parses balanced curly braces {} and square brackets []
++// from input, returning a tree of TokenNodes rooted at depth 0.
++func ParseDelimitedTokens(input string, maxDepth int) (*TokenNode, error) {
++	if maxDepth < 0 {
++		return nil, fmt.Errorf("DEPTH_LIMIT_EXCEEDED: max depth %d exceeded", maxDepth)
++	}
++
++	root := &TokenNode{
++		Kind:  "root",
++		Depth: 0,
++	}
++
++	stack := []*delimiterFrame{}
++	currentNode := root
++
++	for _, ch := range input {
++		switch ch {
++		case '{', '[':
++			newDepth := currentNode.Depth + 1
++			if newDepth > maxDepth {
++				return nil, fmt.Errorf("DEPTH_LIMIT_EXCEEDED: max depth %d exceeded", maxDepth)
++			}
++
++			kind := "object"
++			if ch == '[' {
++				kind = "array"
++			}
++
++			newNode := &TokenNode{
++				Kind:  kind,
++				Depth: newDepth,
++			}
++
++			currentNode.Children = append(currentNode.Children, newNode)
++			stack = append(stack, &delimiterFrame{
++				delim: ch,
++				node:  newNode,
++			})
++			currentNode = newNode
++
++		case '}':
++			if len(stack) == 0 {
++				return nil, fmt.Errorf("UNEXPECTED_CLOSING_DELIMITER")
++			}
++			top := stack[len(stack)-1]
++			if top.delim != '{' {
++				return nil, fmt.Errorf("MISMATCHED_DELIMITER: expected ], got }")
++			}
++			stack = stack[:len(stack)-1]
++			if len(stack) == 0 {
++				currentNode = root
++			} else {
++				currentNode = stack[len(stack)-1].node
++			}
++
++		case ']':
++			if len(stack) == 0 {
++				return nil, fmt.Errorf("UNEXPECTED_CLOSING_DELIMITER")
++			}
++			top := stack[len(stack)-1]
++			if top.delim != '[' {
++				return nil, fmt.Errorf("MISMATCHED_DELIMITER: expected }, got ]")
++			}
++			stack = stack[:len(stack)-1]
++			if len(stack) == 0 {
++				currentNode = root
++			} else {
++				currentNode = stack[len(stack)-1].node
++			}
++
++		default:
++			// Non-delimiter characters outside and inside are permitted
++		}
++	}
++
++	if len(stack) > 0 {
++		return nil, fmt.Errorf("UNTERMINATED_DELIMITER")
++	}
++
++	return root, nil
++}

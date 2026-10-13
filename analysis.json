@@ -1,0 +1,120 @@
+{
+  "schema_version": "sila/pilot-analysis/v1",
+  "status": "complete",
+  "total_pairs": 6,
+  "total_runs": 12,
+  "baseline_summary": {
+    "total_runs": 6,
+    "accepted_runs": 5,
+    "first_pass_runs": 5,
+    "interventions": 0,
+    "scope_violations": 0,
+    "escaped_defects": 0,
+    "total_wall_seconds": 435,
+    "total_tokens": 141140
+  },
+  "contract_summary": {
+    "total_runs": 6,
+    "accepted_runs": 3,
+    "first_pass_runs": 3,
+    "interventions": 0,
+    "scope_violations": 0,
+    "escaped_defects": 3,
+    "total_wall_seconds": 505,
+    "total_tokens": 101480
+  },
+  "paired_comparisons": [
+    {
+      "fixture_id": "01-cli-validation",
+      "baseline_accepted": false,
+      "contract_accepted": true,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 0.2964824120603015,
+      "token_ratio": 0.3283250617535749,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 0
+    },
+    {
+      "fixture_id": "02-parser-boundary",
+      "baseline_accepted": true,
+      "contract_accepted": false,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 0.37719298245614036,
+      "token_ratio": 0.9511967671743861,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 1
+    },
+    {
+      "fixture_id": "03-file-preservation",
+      "baseline_accepted": true,
+      "contract_accepted": true,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 1.2790697674418605,
+      "token_ratio": 0.6453279073407419,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 0
+    },
+    {
+      "fixture_id": "04-cancellation",
+      "baseline_accepted": true,
+      "contract_accepted": false,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 2.6153846153846154,
+      "token_ratio": 0.9454424114342918,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 1
+    },
+    {
+      "fixture_id": "05-conditional-dependency",
+      "baseline_accepted": true,
+      "contract_accepted": true,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 1.9333333333333333,
+      "token_ratio": 0.7152093098432196,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 0
+    },
+    {
+      "fixture_id": "06-multistep-resume",
+      "baseline_accepted": true,
+      "contract_accepted": false,
+      "baseline_interventions": 0,
+      "contract_interventions": 0,
+      "wall_ratio": 24.125,
+      "token_ratio": 1.6214506050779087,
+      "scope_violation_delta": 0,
+      "escaped_defect_delta": 1
+    }
+  ],
+  "median_ratios": {
+    "wall_ratio": 1.6062015503875968,
+    "token_ratio": 0.8303258606387557
+  },
+  "intervention_delta": {
+    "baseline_total": 0,
+    "contract_total": 0,
+    "absolute_delta": 0,
+    "reduction_pct": null,
+    "reason": "zero_denominator"
+  },
+  "threshold_checks": {
+    "contract_accepted_met": false,
+    "scope_violations_zero": true,
+    "escaped_defects_zero": false,
+    "first_pass_not_worse": false,
+    "intervention_reduction_met": false,
+    "wall_ratio_met": false,
+    "token_ratio_met": true
+  },
+  "preliminary_decision": "stop",
+  "limitations": [
+    "Small-sample pilot across six paired programming tasks.",
+    "Evaluates structural contract presentation; does not extrapolate to general codebase changes.",
+    "Results apply to the evaluated model and harness configuration only."
+  ]
+}

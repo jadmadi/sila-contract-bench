@@ -1,0 +1,95 @@
+{
+  "schema_version": "sila/pilot-manifest/v1",
+  "baseline_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "candidate_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "model": "gemini-2.5-flash",
+  "harness": "antigravity",
+  "limits": {
+    "wall_clock_timeout_minutes": 30,
+    "max_output_tokens": 32000
+  },
+  "randomized_order": [
+    "03-file-preservation",
+    "01-cli-validation",
+    "05-conditional-dependency",
+    "02-parser-boundary",
+    "06-multistep-resume",
+    "04-cancellation"
+  ],
+  "decision_thresholds": {
+    "min_contract_accepted": 5,
+    "max_contract_scope_violations": 0,
+    "max_contract_escaped_defects": 0,
+    "min_intervention_reduction_pct": 25.0,
+    "max_paired_wall_ratio": 1.25,
+    "max_paired_token_ratio": 1.25
+  },
+  "fixtures": [
+    {
+      "id": "01-cli-validation",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "cli_options_validation",
+      "oracle_path": "fixtures/01-cli-validation/oracle_test.go",
+      "oracle_digest": "11852818a4a02c32f8d9b425065108209977c2bd9b692702b08df2d94a7d4943",
+      "baseline_packet_path": "fixtures/01-cli-validation/baseline.md",
+      "baseline_packet_digest": "33a73648efabad9c0e217329a82cf12c58dbc9d06f3605e5a20d72c11cfa6c1a",
+      "contract_packet_path": "fixtures/01-cli-validation/work-package.json",
+      "contract_packet_digest": "f69dbe845f6eed61338bdb0661793636c0585ad509da6864d650dc1651f2bda6"
+    },
+    {
+      "id": "02-parser-boundary",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "parser_boundary_tokens",
+      "oracle_path": "fixtures/02-parser-boundary/oracle_test.go",
+      "oracle_digest": "47e2654e782c991fd64609e42f453acaf8c521fed2556c55264febc50d5bac84",
+      "baseline_packet_path": "fixtures/02-parser-boundary/baseline.md",
+      "baseline_packet_digest": "e7597d7ebc82728eb799484782d54e1c814e6055ffdb87a817f054eb074dd061",
+      "contract_packet_path": "fixtures/02-parser-boundary/work-package.json",
+      "contract_packet_digest": "a2afe69d0924695064c49e6446ad8c6a5e422ca18d412547354828c04b0ea0e9"
+    },
+    {
+      "id": "03-file-preservation",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "atomic_file_preservation",
+      "oracle_path": "fixtures/03-file-preservation/oracle_test.go",
+      "oracle_digest": "16f7aa34bb1d8c6d2fb2038d91cca8c08a9f9d69490392fa431f4745bce4b40a",
+      "baseline_packet_path": "fixtures/03-file-preservation/baseline.md",
+      "baseline_packet_digest": "41eac49d83f96c4a1dbb850740a31905ce68097c3c0b068af6b2d0829cdef0a8",
+      "contract_packet_path": "fixtures/03-file-preservation/work-package.json",
+      "contract_packet_digest": "9bb0e060d4beca104e3bf5ceabc1f45630e65570d97754971dddd7c410b111f1"
+    },
+    {
+      "id": "04-cancellation",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "context_cancellation_pipeline",
+      "oracle_path": "fixtures/04-cancellation/oracle_test.go",
+      "oracle_digest": "aeebf70c51ad5b2f81b043a5864a8804b5c066a7e5af7b34f096898bcc5a3315",
+      "baseline_packet_path": "fixtures/04-cancellation/baseline.md",
+      "baseline_packet_digest": "0a2c0ad37d410052eee626863918c1f7b5f39d89bb99039f5c200085e063fb46",
+      "contract_packet_path": "fixtures/04-cancellation/work-package.json",
+      "contract_packet_digest": "55b766761b6a7994307b27feb98773fb5641312353a2b62b520a8d7b6f2712ac"
+    },
+    {
+      "id": "05-conditional-dependency",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "task_dag_dependency_resolution",
+      "oracle_path": "fixtures/05-conditional-dependency/oracle_test.go",
+      "oracle_digest": "b5dc0a59927237a27668c61823b74066016e3395f35dff1f9c690dbe67d26c18",
+      "baseline_packet_path": "fixtures/05-conditional-dependency/baseline.md",
+      "baseline_packet_digest": "953b898b3b90b9b65346dbb22c8bedf385e3e888113bbf428b2d0b98db7c5aa9",
+      "contract_packet_path": "fixtures/05-conditional-dependency/work-package.json",
+      "contract_packet_digest": "4722c4ff70ed8bda438d60f9d5dc1d3a7fb7082a0d1191ce67ae3723772910e3"
+    },
+    {
+      "id": "06-multistep-resume",
+      "source_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+      "task_kind": "multistep_checkpoint_resume",
+      "oracle_path": "fixtures/06-multistep-resume/oracle_test.go",
+      "oracle_digest": "33c050027768154262ec5dba819faae4da13edf733efc029e152c0738b5c85e8",
+      "baseline_packet_path": "fixtures/06-multistep-resume/baseline.md",
+      "baseline_packet_digest": "45c42d86580f6f0a3a85ee0b970c479d4c0e1089db327e589aece3dd92774d26",
+      "contract_packet_path": "fixtures/06-multistep-resume/work-package.json",
+      "contract_packet_digest": "47506936900d0532303fd296df725e9f81941db4493b1099cc72f580b2ef95cc"
+    }
+  ]
+}

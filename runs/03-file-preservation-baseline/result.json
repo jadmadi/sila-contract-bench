@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "03-file-preservation",
+  "arm": "baseline",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "41eac49d83f96c4a1dbb850740a31905ce68097c3c0b068af6b2d0829cdef0a8",
+  "oracle_digest": "16f7aa34bb1d8c6d2fb2038d91cca8c08a9f9d69490392fa431f4745bce4b40a",
+  "first_pass": true,
+  "accepted": true,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 0,
+  "wall_seconds": 43,
+  "input_tokens": 9471,
+  "output_tokens": 16085,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/03-file-preservation-baseline/oracle.log"
+  ],
+  "outcome": "accepted"
+}

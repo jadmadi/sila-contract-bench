@@ -1,0 +1,49 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/04-cancellation-baseline/cancellation.go	2026-10-13 07:27:47.668233036 +0300
+@@ -0,0 +1,46 @@
++package taskcancellation
++
++import "context"
++
++type PipelineStep struct {
++	Name string
++	Run  func(ctx context.Context) error
++}
++
++type PipelineResult struct {
++	CompletedCount int
++}
++
++// ExecutePipeline executes steps sequentially, checking for context cancellation
++// before and between every step, and invoking onCleanup if cancelled or if a step fails.
++func ExecutePipeline(ctx context.Context, steps []PipelineStep, onCleanup func()) (*PipelineResult, error) {
++	cleanup := func() {
++		if onCleanup != nil {
++			onCleanup()
++			onCleanup = nil
++		}
++	}
++
++	if err := ctx.Err(); err != nil {
++		cleanup()
++		return nil, err
++	}
++
++	for _, step := range steps {
++		if err := ctx.Err(); err != nil {
++			cleanup()
++			return nil, err
++		}
++
++		if step.Run != nil {
++			if err := step.Run(ctx); err != nil {
++				cleanup()
++				return nil, err
++			}
++		}
++	}
++
++	return &PipelineResult{
++		CompletedCount: len(steps),
++	}, nil
++}

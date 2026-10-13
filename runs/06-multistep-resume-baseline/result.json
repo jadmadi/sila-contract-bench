@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "06-multistep-resume",
+  "arm": "baseline",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "45c42d86580f6f0a3a85ee0b970c479d4c0e1089db327e589aece3dd92774d26",
+  "oracle_digest": "33c050027768154262ec5dba819faae4da13edf733efc029e152c0738b5c85e8",
+  "first_pass": true,
+  "accepted": true,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 0,
+  "wall_seconds": 8,
+  "input_tokens": 9600,
+  "output_tokens": 3043,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/06-multistep-resume-baseline/oracle.log"
+  ],
+  "outcome": "accepted"
+}

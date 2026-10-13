@@ -1,0 +1,96 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/05-conditional-dependency-contract/dependency.go	2026-10-13 07:17:53.066172153 +0300
+@@ -0,0 +1,93 @@
++package conditionaldependency
++
++import (
++	"fmt"
++	"sort"
++)
++
++// TaskNode represents a unit of work and its dependency requirements.
++type TaskNode struct {
++	ID        string   `json:"id"`
++	DependsOn []string `json:"depends_on"`
++}
++
++// ResolveExecutableTasks evaluates the given tasks against the completed prerequisites,
++// detecting dependency cycles and partitioning uncompleted tasks into executable and blocked sets.
++// Returns an error containing CYCLE_DETECTED if a dependency cycle is found.
++// The returned executable and blocked slices are deterministically sorted alphabetically.
++func ResolveExecutableTasks(tasks []TaskNode, completed map[string]bool) (executable []string, blocked []string, err error) {
++	// Build adjacency map for cycle detection.
++	adj := make(map[string][]string)
++	for _, task := range tasks {
++		adj[task.ID] = append(adj[task.ID], task.DependsOn...)
++	}
++
++	// S-001: Validate no cycles using DFS (3-color cycle detection).
++	const (
++		stateUnvisited = 0
++		stateVisiting  = 1
++		stateVisited   = 2
++	)
++
++	state := make(map[string]int)
++
++	var hasCycle func(node string) bool
++	hasCycle = func(node string) bool {
++		state[node] = stateVisiting
++		for _, dep := range adj[node] {
++			if state[dep] == stateVisiting {
++				return true
++			}
++			if state[dep] == stateUnvisited {
++				if hasCycle(dep) {
++					return true
++				}
++			}
++		}
++		state[node] = stateVisited
++		return false
++	}
++
++	for _, task := range tasks {
++		if state[task.ID] == stateUnvisited {
++			if hasCycle(task.ID) {
++				return nil, nil, fmt.Errorf("CYCLE_DETECTED: dependency cycle detected at task %q", task.ID)
++			}
++		}
++	}
++
++	executable = make([]string, 0)
++	blocked = make([]string, 0)
++	seen := make(map[string]bool)
++
++	// S-002: Filter uncompleted tasks. If all DependsOn in completed, append to executable; else blocked.
++	for _, task := range tasks {
++		if completed != nil && completed[task.ID] {
++			continue
++		}
++		if seen[task.ID] {
++			continue
++		}
++		seen[task.ID] = true
++
++		allSatisfied := true
++		for _, dep := range task.DependsOn {
++			if completed == nil || !completed[dep] {
++				allSatisfied = false
++				break
++			}
++		}
++
++		if allSatisfied {
++			executable = append(executable, task.ID)
++		} else {
++			blocked = append(blocked, task.ID)
++		}
++	}
++
++	// S-003: Sort both result slices alphabetically.
++	sort.Strings(executable)
++	sort.Strings(blocked)
++
++	return executable, blocked, nil
++}

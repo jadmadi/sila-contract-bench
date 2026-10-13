@@ -1,0 +1,84 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/03-file-preservation-contract/atomic.go	2026-10-13 07:08:51.528749137 +0300
+@@ -0,0 +1,81 @@
++package filepreservation
++
++import (
++	"errors"
++	"os"
++	"path/filepath"
++)
++
++// SafeAtomicUpdate atomically updates the file at targetPath using updateFn.
++// It guarantees zero state corruption on failure:
++// - If updateFn returns an error, the original file is left completely intact.
++// - Temporary sibling files are cleaned up if any step fails.
++// - On success, the file is updated atomically and its original permissions are preserved.
++func SafeAtomicUpdate(targetPath string, updateFn func(old []byte) ([]byte, error)) error {
++	if updateFn == nil {
++		return errors.New("updateFn must not be nil")
++	}
++
++	mode := os.FileMode(0644)
++	var oldData []byte
++
++	info, err := os.Stat(targetPath)
++	if err != nil {
++		if !os.IsNotExist(err) && !errors.Is(err, os.ErrNotExist) {
++			return err
++		}
++		oldData = nil
++	} else {
++		mode = info.Mode()
++		data, err := os.ReadFile(targetPath)
++		if err != nil {
++			return err
++		}
++		oldData = data
++	}
++
++	newData, err := updateFn(oldData)
++	if err != nil {
++		return err
++	}
++
++	dir := filepath.Dir(targetPath)
++	base := filepath.Base(targetPath)
++
++	tmpFile, err := os.CreateTemp(dir, "."+base+".*.tmp")
++	if err != nil {
++		return err
++	}
++	tmpName := tmpFile.Name()
++
++	success := false
++	defer func() {
++		if !success {
++			_ = tmpFile.Close()
++			_ = os.Remove(tmpName)
++		}
++	}()
++
++	if _, err := tmpFile.Write(newData); err != nil {
++		return err
++	}
++
++	if err := tmpFile.Sync(); err != nil {
++		return err
++	}
++
++	if err := tmpFile.Chmod(mode); err != nil {
++		return err
++	}
++
++	if err := tmpFile.Close(); err != nil {
++		return err
++	}
++
++	if err := os.Rename(tmpName, targetPath); err != nil {
++		return err
++	}
++
++	success = true
++	return nil
++}

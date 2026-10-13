@@ -1,0 +1,163 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-02-parser-boundary",
+  "revision": 1,
+  "purpose": "Implement strict delimited token parsing with recursive depth ceiling and delimiter matching",
+  "constraints": [
+    "pure Go standard library only",
+    "explicit error codes on syntax violations"
+  ],
+  "non_goals": [
+    "no full JSON parsing",
+    "no whitespace stripping inside tokens"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement ParseDelimitedTokens",
+      "context": "Parsers must bound recursion depth to prevent stack overflow DoS and detect mismatched brackets.",
+      "why": "Enforce bounded memory and compute during token stream ingestion.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "parser.go"
+        ],
+        "edit": [
+          "parser.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "parser.go",
+          "symbol": "TokenNode",
+          "excerpt": "type TokenNode struct {\n\tKind string\n\tDepth int\n\tChildren []*TokenNode\n}",
+          "sha256": "3c829910d540be26b01ab01e9124449b291d2c6c06a38092ec0b4e5d6d87f54c"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Iterative stack-based parser",
+          "rationale": "Avoids Go runtime call-stack exhaustion on deep structures.",
+          "rejected": [
+            "Recursive descent (unbounded call stack growth)"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Initialize root node at depth 0 and node stack",
+          "expected": "Root initialized and pushed to stack",
+          "on_failure": "Verify root initialization"
+        },
+        {
+          "id": "S-002",
+          "action": "Iterate bytes in input. On { or [ check depth + 1 <= maxDepth, push child, update depth",
+          "expected": "Nodes created hierarchically",
+          "on_failure": "Check depth increment logic"
+        },
+        {
+          "id": "S-003",
+          "action": "On } or ] verify top-of-stack kind matches, pop stack. On end of input check stack length == 1",
+          "expected": "Delimiter matching and termination verified",
+          "on_failure": "Check delimiter pairing validation"
+        }
+      ],
+      "interfaces": [
+        "func ParseDelimitedTokens(input string, maxDepth int) (*TokenNode, error)"
+      ],
+      "constraints": [
+        "Exceeding maxDepth must return DEPTH_LIMIT_EXCEEDED",
+        "Mismatched delimiter must return MISMATCHED_DELIMITER",
+        "Unclosed delimiter must return UNTERMINATED_DELIMITER"
+      ],
+      "examples": [
+        {
+          "input": "\"[{}]\", maxDepth=5",
+          "output": "root -> array (depth 1) -> object (depth 2)",
+          "explanation": "Nested array containing an object"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002",
+        "AC-003"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestParseDelimitedTokens$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "parserboundary/TestParseDelimitedTokens",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Depth violation must fail immediately without reading entire stream"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "Balanced nested tokens parsed correctly into hierarchy",
+      "given": "Valid nested input",
+      "action": "Call ParseDelimitedTokens",
+      "expected": "Returns tree of TokenNodes with accurate Kind and Depth",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Depth exceeding maxDepth returns DEPTH_LIMIT_EXCEEDED",
+      "given": "Input nesting deeper than maxDepth",
+      "action": "Call ParseDelimitedTokens",
+      "expected": "Returns error containing DEPTH_LIMIT_EXCEEDED",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-003",
+      "requirement": "Mismatched or unclosed delimiters rejected",
+      "given": "Input with mismatched {] or trailing unclosed {",
+      "action": "Call ParseDelimitedTokens",
+      "expected": "Returns error containing MISMATCHED_DELIMITER or UNTERMINATED_DELIMITER",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}

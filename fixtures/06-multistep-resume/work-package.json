@@ -1,0 +1,149 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-06-multistep-resume",
+  "revision": 1,
+  "purpose": "Implement safe checkpoint resumption preventing redundant step execution",
+  "constraints": [
+    "pure Go standard library only",
+    "never re-execute already completed steps"
+  ],
+  "non_goals": [
+    "no background worker pools",
+    "no remote checkpoint synchronization"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement ResumeTaskWorkflow",
+      "context": "Agent workflows interrupted by timeouts or user intervention must resume cleanly from the last completed step.",
+      "why": "Prevent redundant work and duplicate side effects.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "resume.go"
+        ],
+        "edit": [
+          "resume.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "resume.go",
+          "symbol": "ResumeTaskWorkflow",
+          "excerpt": "func ResumeTaskWorkflow(cp *Checkpoint, steps []StepDefinition, runner StepRunner) (*Checkpoint, error)",
+          "sha256": "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Linear iteration with set-based completed step lookup",
+          "rationale": "O(1) skip checks and deterministic execution order.",
+          "rejected": [
+            "Re-executing all steps idempotently (not all steps are idempotent)"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Index cp.CompletedSteps into a fast lookup map",
+          "expected": "Set of already completed step IDs created",
+          "on_failure": "Verify lookup map creation"
+        },
+        {
+          "id": "S-002",
+          "action": "Iterate steps. If in set, skip runner call. If not in set, set CurrentStep and call runner.Execute",
+          "expected": "Completed steps skipped, remaining steps executed",
+          "on_failure": "Verify skip condition"
+        },
+        {
+          "id": "S-003",
+          "action": "On step error, record LastError and return immediately without running next steps",
+          "expected": "Halt on failure with accurate checkpoint state",
+          "on_failure": "Ensure failure terminates loop"
+        }
+      ],
+      "interfaces": [
+        "func ResumeTaskWorkflow(cp *Checkpoint, steps []StepDefinition, runner StepRunner) (*Checkpoint, error)"
+      ],
+      "constraints": [
+        "Already completed steps must not trigger runner.Execute",
+        "Failed step must not be added to CompletedSteps"
+      ],
+      "examples": [
+        {
+          "input": "cp with CompletedSteps=[S1], steps=[S1, S2]",
+          "output": "runner called only for S2, final CompletedSteps=[S1, S2]",
+          "explanation": "Skips S1 and executes S2"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestResumeTaskWorkflow$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "multistepresume/TestResumeTaskWorkflow",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Any step failure must halt execution and preserve partial progress"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "Completed steps in checkpoint are skipped without re-execution",
+      "given": "Checkpoint with prior completed steps",
+      "action": "Call ResumeTaskWorkflow",
+      "expected": "Runner called only for remaining uncompleted steps",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Step failure records error in checkpoint and prevents further execution",
+      "given": "Pipeline where step 2 fails",
+      "action": "Call ResumeTaskWorkflow",
+      "expected": "Returns error, checkpoint records step 1 completed and step 2 failure, step 3 never runs",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}

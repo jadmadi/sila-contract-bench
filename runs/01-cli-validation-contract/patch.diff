@@ -1,0 +1,59 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/01-cli-validation-contract/options.go	2026-10-13 07:14:41.040214797 +0300
+@@ -0,0 +1,56 @@
++package clivalidation
++
++import (
++	"errors"
++	"fmt"
++	"strconv"
++	"strings"
++)
++
++// RunOptions represents parsed and validated CLI execution options.
++type RunOptions struct {
++	Timeout int
++	Format  string
++	Strict  bool
++	Targets []string
++}
++
++// ValidateAndParseRunOptions parses and validates command line arguments.
++// It supports --timeout=<int>, --format=<json|text>, --strict flags,
++// and positional targets.
++func ValidateAndParseRunOptions(args []string) (*RunOptions, error) {
++	opts := &RunOptions{
++		Timeout: 30,
++		Format:  "text",
++		Strict:  false,
++	}
++
++	for _, arg := range args {
++		if strings.HasPrefix(arg, "--timeout=") {
++			valStr := strings.TrimPrefix(arg, "--timeout=")
++			val, err := strconv.Atoi(valStr)
++			if err != nil || val <= 0 {
++				return nil, errors.New("INVALID_TIMEOUT")
++			}
++			opts.Timeout = val
++		} else if arg == "--timeout" {
++			return nil, errors.New("INVALID_TIMEOUT")
++		} else if strings.HasPrefix(arg, "--format=") {
++			valStr := strings.TrimPrefix(arg, "--format=")
++			if valStr != "json" && valStr != "text" {
++				return nil, errors.New("INVALID_FORMAT")
++			}
++			opts.Format = valStr
++		} else if arg == "--format" {
++			return nil, errors.New("INVALID_FORMAT")
++		} else if arg == "--strict" {
++			opts.Strict = true
++		} else if strings.HasPrefix(arg, "--") {
++			return nil, fmt.Errorf("UNKNOWN_FLAG: %s", arg)
++		} else {
++			opts.Targets = append(opts.Targets, arg)
++		}
++	}
++
++	return opts, nil
++}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "05-conditional-dependency",
+  "arm": "contract",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "4722c4ff70ed8bda438d60f9d5dc1d3a7fb7082a0d1191ce67ae3723772910e3",
+  "oracle_digest": "b5dc0a59927237a27668c61823b74066016e3395f35dff1f9c690dbe67d26c18",
+  "first_pass": true,
+  "accepted": true,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 0,
+  "wall_seconds": 87,
+  "input_tokens": 11500,
+  "output_tokens": 6200,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/05-conditional-dependency-contract/oracle.log"
+  ],
+  "outcome": "accepted"
+}

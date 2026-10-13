@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "04-cancellation",
+  "arm": "contract",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "55b766761b6a7994307b27feb98773fb5641312353a2b62b520a8d7b6f2712ac",
+  "oracle_digest": "aeebf70c51ad5b2f81b043a5864a8804b5c066a7e5af7b34f096898bcc5a3315",
+  "first_pass": false,
+  "accepted": false,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 1,
+  "wall_seconds": 68,
+  "input_tokens": 11500,
+  "output_tokens": 5500,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/04-cancellation-contract/oracle.log"
+  ],
+  "outcome": "rejected"
+}

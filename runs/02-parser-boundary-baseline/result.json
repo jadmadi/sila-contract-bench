@@ -1,0 +1,25 @@
+{
+  "schema_version": "sila/trial-result/v1",
+  "fixture_id": "02-parser-boundary",
+  "arm": "baseline",
+  "model_version": "gemini-2.5-flash",
+  "harness_version": "antigravity-1.0",
+  "start_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "final_commit": "652add091e1bb066398528277cda0a8308eb4b91",
+  "packet_digest": "e7597d7ebc82728eb799484782d54e1c814e6055ffdb87a817f054eb074dd061",
+  "oracle_digest": "47e2654e782c991fd64609e42f453acaf8c521fed2556c55264febc50d5bac84",
+  "first_pass": true,
+  "accepted": true,
+  "interventions": 0,
+  "scope_violations": 0,
+  "escaped_defects": 0,
+  "wall_seconds": 114,
+  "input_tokens": 9600,
+  "output_tokens": 6485,
+  "cost": 0.0,
+  "cost_unit": "USD",
+  "evidence_paths": [
+    "goals/goal-contract-pilot/runs/02-parser-boundary-baseline/oracle.log"
+  ],
+  "outcome": "accepted"
+}

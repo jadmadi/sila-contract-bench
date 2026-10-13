@@ -1,0 +1,92 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/05-conditional-dependency-baseline/dependency.go	2026-10-13 07:16:01.877038782 +0300
+@@ -0,0 +1,89 @@
++package conditionaldependency
++
++import (
++	"errors"
++	"sort"
++)
++
++type TaskNode struct {
++	ID        string
++	DependsOn []string
++}
++
++// ResolveExecutableTasks resolves which tasks can be executed next and which are blocked.
++// Returns an error if a dependency cycle is detected.
++func ResolveExecutableTasks(tasks []TaskNode, completed map[string]bool) (executable []string, blocked []string, err error) {
++	depMap := make(map[string][]string)
++	var taskIDs []string
++	seenTasks := make(map[string]bool)
++
++	for _, task := range tasks {
++		if !seenTasks[task.ID] {
++			seenTasks[task.ID] = true
++			taskIDs = append(taskIDs, task.ID)
++		}
++		depMap[task.ID] = append(depMap[task.ID], task.DependsOn...)
++	}
++
++	// Cycle detection using 3-color DFS
++	const (
++		unvisited = 0
++		visiting  = 1
++		visited   = 2
++	)
++
++	color := make(map[string]int)
++
++	var hasCycle func(node string) bool
++	hasCycle = func(node string) bool {
++		color[node] = visiting
++		for _, dep := range depMap[node] {
++			if color[dep] == visiting {
++				return true
++			}
++			if color[dep] == unvisited {
++				if hasCycle(dep) {
++					return true
++				}
++			}
++		}
++		color[node] = visited
++		return false
++	}
++
++	for _, id := range taskIDs {
++		if color[id] == unvisited {
++			if hasCycle(id) {
++				return nil, nil, errors.New("CYCLE_DETECTED: cycle found in dependency graph")
++			}
++		}
++	}
++
++	executable = make([]string, 0)
++	blocked = make([]string, 0)
++
++	for _, id := range taskIDs {
++		if completed != nil && completed[id] {
++			continue
++		}
++
++		allCompleted := true
++		for _, dep := range depMap[id] {
++			if completed == nil || !completed[dep] {
++				allCompleted = false
++				break
++			}
++		}
++
++		if allCompleted {
++			executable = append(executable, id)
++		} else {
++			blocked = append(blocked, id)
++		}
++	}
++
++	sort.Strings(executable)
++	sort.Strings(blocked)
++
++	return executable, blocked, nil
++}

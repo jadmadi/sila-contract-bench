@@ -1,0 +1,143 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-04-cancellation",
+  "revision": 1,
+  "purpose": "Implement pipeline step execution with context cancellation and reliable cleanup",
+  "constraints": [
+    "pure Go standard library only",
+    "must check ctx.Err() before each step"
+  ],
+  "non_goals": [
+    "no concurrent step execution",
+    "no step retry mechanism"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement ExecutePipeline",
+      "context": "Pipelines must halt promptly on context cancellation and clean up partial state.",
+      "why": "Prevent zombie processes and resource leaks when user interrupts operations.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "cancellation.go"
+        ],
+        "edit": [
+          "cancellation.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "cancellation.go",
+          "symbol": "ExecutePipeline",
+          "excerpt": "func ExecutePipeline(ctx context.Context, steps []PipelineStep, onCleanup func()) (*PipelineResult, error)",
+          "sha256": "8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Check ctx.Err() before step execution and pass ctx to Step.Run",
+          "rationale": "Standard Go context cancellation protocol.",
+          "rejected": [
+            "Polling in background timer goroutine"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Check ctx.Err(). If canceled, call onCleanup and return ctx.Err()",
+          "expected": "Immediate abort on already-canceled context",
+          "on_failure": "Verify initial ctx check"
+        },
+        {
+          "id": "S-002",
+          "action": "Loop through steps. Check ctx.Err() before each, run step, handle error",
+          "expected": "Sequential execution with early abort",
+          "on_failure": "Verify error and cancellation handling"
+        }
+      ],
+      "interfaces": [
+        "func ExecutePipeline(ctx context.Context, steps []PipelineStep, onCleanup func()) (*PipelineResult, error)"
+      ],
+      "constraints": [
+        "Must invoke onCleanup on cancellation or step failure",
+        "Must NOT invoke onCleanup on full success"
+      ],
+      "examples": [
+        {
+          "input": "ctx with 3 steps, canceled after step 1",
+          "output": "Returns ctx.Err(), completed=1, onCleanup called once",
+          "explanation": "Stops pipeline without executing steps 2 and 3"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestExecutePipeline$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "taskcancellation/TestExecutePipeline",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Cancellation must halt loop immediately"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "All steps executed to completion when context remains active",
+      "given": "Active context and 3 successful steps",
+      "action": "Call ExecutePipeline",
+      "expected": "Returns CompletedCount=3, err=nil, onCleanup not called",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Execution halts on canceled context and calls onCleanup exactly once",
+      "given": "Context canceled during step 2 of 4",
+      "action": "Call ExecutePipeline",
+      "expected": "Returns context.Canceled error, steps 3-4 never execute, onCleanup called once",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}

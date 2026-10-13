@@ -1,0 +1,81 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/01-cli-validation-baseline/options.go	2026-10-13 07:13:03.735222949 +0300
+@@ -0,0 +1,78 @@
++package clivalidation
++
++import (
++	"errors"
++	"fmt"
++	"strconv"
++	"strings"
++)
++
++type RunOptions struct {
++	Timeout int      `json:"timeout"`
++	Format  string   `json:"format"`
++	Strict  bool     `json:"strict"`
++	Targets []string `json:"targets,omitempty"`
++}
++
++func ValidateAndParseRunOptions(args []string) (*RunOptions, error) {
++	if len(args) == 0 {
++		return &RunOptions{
++			Timeout: 30,
++			Format:  "text",
++			Strict:  false,
++			Targets: nil,
++		}, nil
++	}
++
++	timeoutFound := false
++	timeout := 0
++	format := "text"
++	strict := false
++	var targets []string
++
++	for _, arg := range args {
++		if strings.HasPrefix(arg, "--") {
++			if arg == "--strict" {
++				strict = true
++			} else if arg == "--timeout" || strings.HasPrefix(arg, "--timeout=") {
++				timeoutFound = true
++				if arg == "--timeout" {
++					return nil, errors.New("INVALID_TIMEOUT")
++				}
++				valStr := strings.TrimPrefix(arg, "--timeout=")
++				if valStr == "" {
++					return nil, errors.New("INVALID_TIMEOUT")
++				}
++				val, err := strconv.Atoi(valStr)
++				if err != nil || val <= 0 {
++					return nil, errors.New("INVALID_TIMEOUT")
++				}
++				timeout = val
++			} else if arg == "--format" || strings.HasPrefix(arg, "--format=") {
++				if arg == "--format" {
++					return nil, errors.New("INVALID_FORMAT")
++				}
++				valStr := strings.TrimPrefix(arg, "--format=")
++				if valStr != "json" && valStr != "text" {
++					return nil, errors.New("INVALID_FORMAT")
++				}
++				format = valStr
++			} else {
++				return nil, fmt.Errorf("UNKNOWN_FLAG: %s", arg)
++			}
++		} else {
++			targets = append(targets, arg)
++		}
++	}
++
++	if !timeoutFound {
++		return nil, errors.New("INVALID_TIMEOUT")
++	}
++
++	return &RunOptions{
++		Timeout: timeout,
++		Format:  format,
++		Strict:  strict,
++		Targets: targets,
++	}, nil
++}

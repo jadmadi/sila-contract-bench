@@ -1,0 +1,162 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-05-conditional-dependency",
+  "revision": 1,
+  "purpose": "Implement task dependency resolution with cycle detection and completion state evaluation",
+  "constraints": [
+    "pure Go standard library only",
+    "deterministic alphabetical sort on output slices"
+  ],
+  "non_goals": [
+    "no dynamic task graph modification",
+    "no persistence layer"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement ResolveExecutableTasks",
+      "context": "Tasks cannot execute until all prerequisite conditions are met; cycles must be caught before scheduling.",
+      "why": "Prevent deadlocks and scheduling stalled tasks.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "dependency.go"
+        ],
+        "edit": [
+          "dependency.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "dependency.go",
+          "symbol": "ResolveExecutableTasks",
+          "excerpt": "func ResolveExecutableTasks(tasks []TaskNode, completed map[string]bool) (executable []string, blocked []string, err error)",
+          "sha256": "7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Depth-first search with visited/recStack for cycle detection",
+          "rationale": "Standard linear-time cycle detection algorithm.",
+          "rejected": [
+            "Floyd-Warshall (O(V^3) excessive overhead)"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Build adjacency map and validate no cycles using DFS",
+          "expected": "Cycles detected and rejected with CYCLE_DETECTED",
+          "on_failure": "Verify DFS recursion tracking"
+        },
+        {
+          "id": "S-002",
+          "action": "Filter uncompleted tasks. If all DependsOn in completed, append to executable; else blocked",
+          "expected": "Correct partitioning into executable and blocked",
+          "on_failure": "Verify map lookup for completed state"
+        },
+        {
+          "id": "S-003",
+          "action": "Sort both result slices alphabetically",
+          "expected": "Deterministic ordered slices",
+          "on_failure": "Call sort.Strings on both slices"
+        }
+      ],
+      "interfaces": [
+        "func ResolveExecutableTasks(tasks []TaskNode, completed map[string]bool) (executable []string, blocked []string, err error)"
+      ],
+      "constraints": [
+        "Dependency cycle must return error containing CYCLE_DETECTED",
+        "Outputs must be sorted alphabetically"
+      ],
+      "examples": [
+        {
+          "input": "Tasks [A, B(deps A)], completed [A:true]",
+          "output": "executable: [B], blocked: []",
+          "explanation": "B is executable because A is completed"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002",
+        "AC-003"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestResolveExecutableTasks$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "conditionaldependency/TestResolveExecutableTasks",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Cycle error must halt resolution immediately"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "Tasks with all satisfied dependencies are classified as executable",
+      "given": "Task list and map of completed prerequisites",
+      "action": "Call ResolveExecutableTasks",
+      "expected": "Executable tasks returned in sorted order",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Tasks with unmet prerequisites are classified as blocked",
+      "given": "Task with missing prerequisite",
+      "action": "Call ResolveExecutableTasks",
+      "expected": "Task placed in blocked slice",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-003",
+      "requirement": "Cyclic dependencies return CYCLE_DETECTED error",
+      "given": "Circular task dependency graph",
+      "action": "Call ResolveExecutableTasks",
+      "expected": "Returns error containing CYCLE_DETECTED",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}

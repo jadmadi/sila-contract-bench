@@ -1,0 +1,85 @@
+--- /dev/null	2026-10-02 06:49:14.429292167 +0300
++++ cli/scratch/trials/02-parser-boundary-contract/parser.go	2026-10-13 07:21:29.904382422 +0300
+@@ -0,0 +1,82 @@
++package parserboundary
++
++import (
++	"errors"
++)
++
++var (
++	ErrDepthLimitExceeded    = errors.New("DEPTH_LIMIT_EXCEEDED")
++	ErrMismatchedDelimiter   = errors.New("MISMATCHED_DELIMITER")
++	ErrUnterminatedDelimiter = errors.New("UNTERMINATED_DELIMITER")
++)
++
++type TokenNode struct {
++	Kind     string
++	Depth    int
++	Children []*TokenNode
++}
++
++func ParseDelimitedTokens(input string, maxDepth int) (*TokenNode, error) {
++	root := &TokenNode{
++		Kind:     "root",
++		Depth:    0,
++		Children: make([]*TokenNode, 0),
++	}
++	stack := []*TokenNode{root}
++
++	for i := 0; i < len(input); i++ {
++		ch := input[i]
++		switch ch {
++		case '{':
++			curr := stack[len(stack)-1]
++			if curr.Depth+1 > maxDepth {
++				return nil, ErrDepthLimitExceeded
++			}
++			node := &TokenNode{
++				Kind:     "object",
++				Depth:    curr.Depth + 1,
++				Children: make([]*TokenNode, 0),
++			}
++			curr.Children = append(curr.Children, node)
++			stack = append(stack, node)
++		case '[':
++			curr := stack[len(stack)-1]
++			if curr.Depth+1 > maxDepth {
++				return nil, ErrDepthLimitExceeded
++			}
++			node := &TokenNode{
++				Kind:     "array",
++				Depth:    curr.Depth + 1,
++				Children: make([]*TokenNode, 0),
++			}
++			curr.Children = append(curr.Children, node)
++			stack = append(stack, node)
++		case '}':
++			if len(stack) <= 1 {
++				return nil, ErrMismatchedDelimiter
++			}
++			top := stack[len(stack)-1]
++			if top.Kind != "object" {
++				return nil, ErrMismatchedDelimiter
++			}
++			stack = stack[:len(stack)-1]
++		case ']':
++			if len(stack) <= 1 {
++				return nil, ErrMismatchedDelimiter
++			}
++			top := stack[len(stack)-1]
++			if top.Kind != "array" {
++				return nil, ErrMismatchedDelimiter
++			}
++			stack = stack[:len(stack)-1]
++		default:
++			// Non-delimiter characters are skipped
++		}
++	}
++
++	if len(stack) > 1 {
++		return nil, ErrUnterminatedDelimiter
++	}
++
++	return root, nil
++}

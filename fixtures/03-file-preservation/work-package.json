@@ -1,0 +1,149 @@
+{
+  "schema_version": "sila/work-package/v1",
+  "goal_slug": "fix-03-file-preservation",
+  "revision": 1,
+  "purpose": "Implement atomic file updates guaranteeing zero state corruption on failure",
+  "constraints": [
+    "pure Go standard library only",
+    "atomic replacement via temporary sibling rename"
+  ],
+  "non_goals": [
+    "no cross-device filesystem moves",
+    "no file locking daemons"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Implement SafeAtomicUpdate",
+      "context": "File writes must be atomic. Failed updates must never leave broken, truncated, or partial state.",
+      "why": "Prevent file corruption and race conditions across concurrent agent sessions.",
+      "depends_on": [],
+      "files": {
+        "read": [
+          "atomic.go"
+        ],
+        "edit": [
+          "atomic.go"
+        ],
+        "create": [],
+        "forbid": [
+          "vendor/*",
+          ".git/*"
+        ]
+      },
+      "references": [
+        {
+          "path": "atomic.go",
+          "symbol": "SafeAtomicUpdate",
+          "excerpt": "func SafeAtomicUpdate(targetPath string, updateFn func(old []byte) ([]byte, error)) error",
+          "sha256": "9b1b111111111111111111111111111111111111111111111111111111111111"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "D-001",
+          "chosen": "Write to temp sibling in filepath.Dir then os.Rename",
+          "rationale": "Same-directory temporary file guarantees atomic rename on POSIX filesystems.",
+          "rejected": [
+            "os.Create in place (truncates original file before content is written)"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "S-001",
+          "action": "Read existing file data if present and record file mode",
+          "expected": "Existing bytes and permissions captured",
+          "on_failure": "Check file existence test"
+        },
+        {
+          "id": "S-002",
+          "action": "Invoke updateFn. If err != nil, abort immediately with zero disk mutation",
+          "expected": "Update function evaluated safely",
+          "on_failure": "Ensure no file write happens before updateFn succeeds"
+        },
+        {
+          "id": "S-003",
+          "action": "Create temporary sibling file, write bytes, sync, close, and rename over targetPath",
+          "expected": "Atomic replacement complete",
+          "on_failure": "Verify os.Rename and defer cleanup of temp file"
+        }
+      ],
+      "interfaces": [
+        "func SafeAtomicUpdate(targetPath string, updateFn func(old []byte) ([]byte, error)) error"
+      ],
+      "constraints": [
+        "Original file must be 100% byte-preserved on updateFn error",
+        "Temp file must be removed if rename does not complete"
+      ],
+      "examples": [
+        {
+          "input": "targetPath=\"config.json\", updateFn returns err",
+          "output": "Returns err, config.json completely unchanged",
+          "explanation": "Abort preserves original file untouched"
+        }
+      ],
+      "acceptance_ids": [
+        "AC-001",
+        "AC-002"
+      ],
+      "checks": [
+        {
+          "id": "C-001",
+          "executable": "go",
+          "args": [
+            "test",
+            "-run",
+            "^TestSafeAtomicUpdate$"
+          ],
+          "cwd": ".",
+          "timeout_seconds": 10,
+          "expected_exit_code": 0,
+          "scope": "unit",
+          "capability": "local",
+          "assertions": [
+            {
+              "kind": "go_test_pass",
+              "target": "filepreservation/TestSafeAtomicUpdate",
+              "expected": true
+            }
+          ]
+        }
+      ],
+      "stop_conditions": [
+        "Any disk write error must clean up temp file before returning"
+      ],
+      "return_format": "sila/task-result/v1"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "requirement": "Successful update atomically writes new content and preserves permissions",
+      "given": "Valid target file and successful updateFn",
+      "action": "Call SafeAtomicUpdate",
+      "expected": "File has updated content and identical file mode",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "requirement": "Failing updateFn leaves original file completely intact and deletes temp files",
+      "given": "Existing target file and updateFn that returns an error",
+      "action": "Call SafeAtomicUpdate",
+      "expected": "Returns update error; original file content byte-for-byte unchanged; zero leftover temp files",
+      "required_scope": "unit",
+      "mandatory": true,
+      "check_ids": [
+        "C-001"
+      ]
+    }
+  ],
+  "dependency_conditions": [],
+  "unresolved_decisions": [],
+  "retired_task_ids": [],
+  "retired_acceptance_ids": []
+}
